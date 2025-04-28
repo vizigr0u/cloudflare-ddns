@@ -2,36 +2,39 @@
 
 This script calls the Cloudflare DNS API to update your IP if it has changed since last check.
 
+## Installing
+
+```sh
+cargo install --git https://github.com/vizigr0u/cloudflare-ddns.git
+```
+
+## Running
+
+### 1. Set environment variables
+
+you can use a `.env` file to specify your environment variables instead of passing them through the script.
+
+See `.env.example`.
+
+### 2. Start
+
+```sh
+cloudflare-ddns my.domain.tld other-domain.tld
+```
+
 ## Why Rust instead of (...)?
 
 Because I like rust.
 
 I also don't think the result looks much worse than most better suited script languages.
 
-## Usage
+## Setting IP_PROVIDER_URL
 
-### Simple one-shot use
+Any url that responds with only your current IP as raw text will work.
 
-```sh
-CLOUDFLARE_EMAIL=... \
-CLOUDFLARE_API_KEY=... \
-ZONE_ID=... \
-DNS_RECORD_ID=... \
-cloudflare-ddns
-```
+### Examples
 
-### Support for .env
-
-you can use a .env file to specify your environment variables instead of passing them through the script
-
-```sh
-cp .env.example .env
-# (edit .env)
-cloudflare-ddns
-```
-
-## Examples IP providers
-
+- [https://api.ipify.org]
 - [https://checkip.amazonaws.com]
 - [https://dynamicdns.park-your-domain.com/getip]
 - [https://ipv4.icanhazip.com]
