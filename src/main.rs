@@ -1,71 +1,51 @@
+use cloudflare::Cloudflare;
+
 use reqwest;
-use serde_json::{json, Value};
 use std::env;
+
+mod cloudflare;
+
+async fn fetch_ip(ip_provider: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let response = reqwest::get(ip_provider).await?;
+    let ip = response.text().await?;
+
+    if ip.is_empty() {
+        return Err(Box::from(format!("Failed to fetch IP address from {}", &ip_provider)));
+    }
+
+    Ok(ip)
+}
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
 
-    let email = env::var("CLOUDFLARE_EMAIL").expect("CLOUDFLARE_EMAIL not set");
-    let api_key = env::var("CLOUDFLARE_API_KEY").expect("CLOUDFLARE_API_KEY not set");
-    let zone_id = env::var("ZONE_ID").expect("ZONE_ID not set");
-    let record_id = env::var("DNS_RECORD_ID").expect("DNS_RECORD_ID not set");
     let ip_provider = env::var("IP_PROVIDER_URL").expect("IP_PROVIDER_URL not set");
+    let cf = Cloudflare::init();
 
-    let current_ip = reqwest::get(&ip_provider).await?.text().await?;
+    let args: Vec<String> = env::args().collect();
 
-    if current_ip.is_empty() {
-        return Err(Box::from(format!("Failed to fetch IP address from {}", &ip_provider)));
-    }
-
-    let client = reqwest::Client::new();
-    let url = format!(
-        "https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}",
-        zone_id, record_id
-    );
-
-    let get_response = client
-        .get(&url)
-        .header("X-Auth-Email", &email)
-        .bearer_auth(&api_key)
-        .send()
-        .await?;
-
-    if !get_response.status().is_success() {
-        return Err(Box::from(format!(
-            "Failed to fetch DNS record: {:?}",
-            get_response.text().await?
-        )));
-    }
-
-    let record_data: Value = get_response.json().await?;
-
-    let stored_ip = record_data["result"]["content"]
-        .as_str()
-        .ok_or("Failed to parse DNS record content")?;
-
-    if stored_ip == current_ip {
-        println!("DNS record is up-to-date ({})", current_ip);
+    if args.len() < 2{
+        eprintln!("Usage: {} record_name...", args[0]);
         return Ok(());
     }
 
-    println!(
-        "Patching DNS record to use {} instead of {}",
-        current_ip, stored_ip
-    );
+    let current_ip = fetch_ip(&ip_provider).await?;
 
-    let patch_response = client
-        .patch(&url)
-        .header("X-Auth-Email", email)
-        .bearer_auth(&api_key)
-        .json(&json!({"content": current_ip}))
-        .send()
-        .await?;
+    for i in 1..args.len() {
+        let record_name = &args[i];
+        let record_id = cf.get_record_id(record_name).await?;
 
-    if patch_response.status().is_success() {
-        println!("DNS record updated successfully: {:?}", patch_response.text().await?);
-    } else {
-        eprintln!("Error updating DNS record: {:?}", patch_response.text().await?);
+        let stored_ip = cf.get_record_content(&record_id).await?;
+
+        if stored_ip == current_ip {
+            println!("DNS record for {record_name} is up-to-date ({current_ip})");
+            return Ok(());
+        }
+
+        cf.set_record_content(&record_id, &current_ip).await?;
+        println!("DNS record for {record_name} updated to {current_ip}");
     }
 
     Ok(())

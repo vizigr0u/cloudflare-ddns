@@ -9,4 +9,5 @@ authors = ["Vladimir Nachbaur <vizigr0u@gmail.com>"]
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1.0", features = ["full"] }
 serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 dotenvy = "0.15"
