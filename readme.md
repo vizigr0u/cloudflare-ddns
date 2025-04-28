@@ -1,6 +1,8 @@
 # Cloudflare ddns overkill edition
 
-This script calls the Cloudflare DNS API to update your IP if it has changed since last check.
+A Dynamic DNS script to update out-of-date Type A DNS entries managed by Cloudflare.
+
+"Overkill edition" because it uses rust but under the hood all it does is a few HTTP calls.
 
 ## Installing
 
