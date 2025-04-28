@@ -2,8 +2,6 @@ use reqwest;
 use serde_json::{json, Value};
 use std::env;
 
-const DEFAULT_IP_PROVIDER: &str = "https://api.ipify.org";
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
@@ -12,8 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = env::var("CLOUDFLARE_API_KEY").expect("CLOUDFLARE_API_KEY not set");
     let zone_id = env::var("ZONE_ID").expect("ZONE_ID not set");
     let record_id = env::var("DNS_RECORD_ID").expect("DNS_RECORD_ID not set");
-
-    let ip_provider = env::var("IP_PROVIDER_URL").unwrap_or_else(|_| DEFAULT_IP_PROVIDER.to_string());
+    let ip_provider = env::var("IP_PROVIDER_URL").expect("IP_PROVIDER_URL not set");
 
     let current_ip = reqwest::get(&ip_provider).await?.text().await?;
 
