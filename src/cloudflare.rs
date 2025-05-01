@@ -9,12 +9,12 @@ pub struct Cloudflare {
 }
 
 impl Cloudflare {
-    pub fn init() -> Self {
-        Self {
+    pub fn init() -> Result<Self, String> {
+        Ok(Self {
             email: env::var("CLOUDFLARE_EMAIL").expect("CLOUDFLARE_EMAIL not set"),
             api_key: env::var("CLOUDFLARE_API_KEY").expect("CLOUDFLARE_API_KEY not set"),
             zone_id: env::var("ZONE_ID").expect("ZONE_ID not set"),
-        }
+        })
     }
 
     fn get_records_url(&self) -> String {

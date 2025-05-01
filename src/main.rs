@@ -1,11 +1,10 @@
 use cloudflare::Cloudflare;
-
 use reqwest;
 use std::env;
 
 mod cloudflare;
 
-async fn fetch_ip(ip_provider: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn fetch_public_ip(ip_provider: &str) -> Result<String, Box<dyn std::error::Error>> {
     let response = reqwest::get(ip_provider).await?;
     let ip = response.text().await?;
 
@@ -21,21 +20,22 @@ async fn fetch_ip(ip_provider: &str) -> Result<String, Box<dyn std::error::Error
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
 
-    let ip_provider = env::var("IP_PROVIDER_URL").expect("IP_PROVIDER_URL not set");
-    let cf = Cloudflare::init();
-
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() < 2{
-        eprintln!("Usage: {} record_name...", args[0]);
-        return Ok(());
+    let record_names: Vec<String> = env::var("RECORD_NAMES").expect("RECORD_NAMES not set")
+        .split(':')
+        .map(String::from)
+        .collect();
+    if record_names.is_empty() {
+        return Err(Box::from("No record names provided in RECORD_NAMES."));
     }
 
-    let current_ip = fetch_ip(&ip_provider).await?;
+    let ip_provider = env::var("IP_PROVIDER_URL").expect("IP_PROVIDER_URL not set");
 
-    for i in 1..args.len() {
-        let record_name = &args[i];
-        let record_id = cf.get_record_id(record_name).await?;
+    let cf = Cloudflare::init()?;
+
+    let current_ip = fetch_public_ip(&ip_provider).await?;
+
+    for record_name in record_names {
+        let record_id = cf.get_record_id(&record_name).await?;
 
         let stored_ip = cf.get_record_content(&record_id).await?;
 
