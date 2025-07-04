@@ -18,8 +18,6 @@ async fn fetch_public_ip(ip_provider: &str) -> Result<String, Box<dyn std::error
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenvy::dotenv()?;
-
     let record_names: Vec<String> = env::var("RECORD_NAMES").expect("RECORD_NAMES not set")
         .split(':')
         .map(String::from)
