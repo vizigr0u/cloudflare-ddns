@@ -13,6 +13,9 @@ RUN cargo build --release
 # Runtime stage
 FROM alpine:latest
 
+LABEL org.opencontainers.image.source=https://github.com/vizigr0u/cloudflare-ddns
+LABEL org.opencontainers.image.description="A Dynamic DNS updater for Cloudflare"
+
 # Install cron
 RUN apk add --no-cache dcron
 
