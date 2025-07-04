@@ -1,10 +1,23 @@
+# Build stage
+FROM rust:latest AS builder
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the source code
+COPY . .
+
+# Build the application in release mode
+RUN cargo build --release
+
+# Runtime stage
 FROM alpine:latest
 
 # Install cron
 RUN apk add --no-cache dcron
 
 # Copy the built binary from the builder stage
-COPY ./target/release/cloudflare-ddns /usr/local/bin
+COPY --from=builder /app/target/release/cloudflare-ddns /usr/local/bin/
 RUN chmod +x /usr/local/bin/cloudflare-ddns
 
 # Create directory for cron jobs
